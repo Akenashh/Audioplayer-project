@@ -18,15 +18,10 @@ def get_metadata(file_path):
         dict: Словарь с ключами 'artist', 'album' и 'genre'.
     """
     metadata = {}
-    try:
-        tag_info = TinyTag.get(file_path)
-        metadata["artist"] = tag_info.artist or "Unknown Artist"
-        metadata["album"] = tag_info.album or "Unknown Album"
-        metadata["genre"] = tag_info.genre or "Unknown Genre"
-    except Exception:
-        metadata["artist"] = "Unknown Artist"
-        metadata["album"] = "Unknown Album"
-        metadata["genre"] = "Unknown Genre"
+    tag_info = TinyTag.get(file_path)
+    metadata["artist"] = tag_info.artist or "Unknown Artist"
+    metadata["album"] = tag_info.album or "Unknown Album"
+    metadata["genre"] = tag_info.genre or "Unknown Genre"
     return metadata
 
 
@@ -118,10 +113,7 @@ class AudioPlayer:
             text="Удалить плейлист", on_click=self.delete_playlist
         )
         self.rename_playlist_button = ft.TextField(
-            label="Новое имя плейлиста:", width=250
-        )
-        self.rename_confirm_button = ft.ElevatedButton(
-            text="Переименовать", on_click=self.rename_playlist
+            label="Новое имя плейлиста:", width=250, on_submit=self.rename_playlist
         )
         self.sort_by_artist_button = ft.IconButton(
             ft.Icons.PERSON, on_click=self.sort_by_artist
@@ -132,9 +124,7 @@ class AudioPlayer:
         self.sort_by_genre_button = ft.IconButton(
             ft.Icons.MUSIC_NOTE, on_click=self.sort_by_genre
         )
-        self.update_metadata_button = ft.IconButton(
-            ft.Icons.CHECK, on_click=self.update_metadata
-        )
+
         self.current_track = ft.Audio(
             src=" ",
             autoplay=False,
@@ -157,9 +147,9 @@ class AudioPlayer:
         self.metadata_list = ft.ListView(
             expand=True, height=300, auto_scroll=False, spacing=10, width=100
         )
-        self.search_bar = ft.SearchBar(width=300, height=40, bar_hint_text="Поиск")
-        self.search_confirm_button = ft.IconButton(
-            ft.Icons.SEARCH, on_click=self.search_by_metadata
+        self.search_bar = ft.SearchBar(
+            width=300, height=40, bar_hint_text="Поиск",
+            on_submit=self.search_by_metadata
         )
         self.current_track_source = None
         self.speed_list = ft.Dropdown(
@@ -216,7 +206,6 @@ class AudioPlayer:
                             self.add_to_playilst_button,
                             self.remove_from_playlist_button,
                             self.rename_playlist_button,
-                            self.rename_confirm_button,
                             ft.Container(expand=True),
                         ],
                     ),
@@ -227,8 +216,7 @@ class AudioPlayer:
                             self.sort_by_artist_button,
                             self.sort_by_album_button,
                             self.sort_by_genre_button,
-                            self.search_bar,
-                            self.search_confirm_button,
+                            self.search_bar
                         ],
                     ),
                 ),
@@ -241,7 +229,7 @@ class AudioPlayer:
                     ],
                 ),
                 ft.Container(
-                    ft.Row([self.metadata_list, self.update_metadata_button]), width=400
+                    self.metadata_list, width=400
                 ),
                 ft.Container(expand=True),
                 self.bottom_app_bar,
@@ -473,16 +461,16 @@ class AudioPlayer:
             meta = cursor.fetchall()[0]
             cursor.close()
             self.metadata_list.controls.append(
-                ft.TextField(value=f"{meta[0]}", helper_text="Путь")
+                ft.TextField(value=f"{meta[0]}", helper_text="Автор", on_submit=self.update_metadata)
             )
             self.metadata_list.controls.append(
-                ft.TextField(value=f"{meta[1]}", helper_text="Автор")
+                ft.TextField(value=f"{meta[1]}", helper_text="Автор", on_submit=self.update_metadata)
             )
             self.metadata_list.controls.append(
-                ft.TextField(value=f"{meta[2]}", helper_text="Альбом")
+                ft.TextField(value=f"{meta[2]}", helper_text="Альбом", on_submit=self.update_metadata)
             )
             self.metadata_list.controls.append(
-                ft.TextField(value=f"{meta[3]}", helper_text="Жанр")
+                ft.TextField(value=f"{meta[3]}", helper_text="Жанр", on_submit=self.update_metadata)
             )
         self.page.update()
 
@@ -904,7 +892,3 @@ class AudioPlayer:
         if self.current_track.volume < 1:
             self.current_track.volume += 0.1
             self.current_track.update()
-
-    def stop(self):
-        """Метод останавливает воспроизведение текущего аудиофайла."""
-        self.current_track.stop()
